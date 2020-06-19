@@ -4,7 +4,7 @@ body{
     background: #4C6663;
     color: #363732;
     font-family: 'Courier New', Courier, monospace;
-    text-align: center;
+    text-align: left;
     position: relative;
     min-height: 100vh;
   }
@@ -88,6 +88,7 @@ label {
 }
 #name{
     color: #363732;
+    align-self: center;
     font-size: 25px;
     font-weight: 900;
     font-family: 'Trebuchet MS'
@@ -111,4 +112,50 @@ label {
     border: 1px solid #80808000;
     padding: 7px;
     align-self: flex-start;
+    background-color: #C9D7F8;
+    align-content: flex-start;
+    font-weight: 600;
+    padding: 23px;
+    width: 575px;
+    height: 200px;
+    border-radius: 5px;
+    border: none;
+    bottom: 10px;
+    text-align: left;
+}
+
+.member .info{
+    font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+    margin-top: -190px;
+    margin-left: 200px;
+    line-height: 1.5;
+    font-weight: lighter;
+    font-size: 18px;
+    
+}
+.member img{
+    margin-top: -10px;
+    margin-left: 20px;
+}
+.member a{
+    font-family: 'Courier New', Courier, monospace;
+    margin-left: 20px;
+    color: #C47335;
+    font-weight: 700;
+    font-size: 26px;
+}
+
+td{
+    padding: 5px;
+}
+#home{
+    text-align: center;
+    background-color: #D4C5E2;
+    color: #4C6663;
+    
+}
+#home a{
+    color: inherit;
+    font-size: 40px;
+    font-weight: 900;
 }
