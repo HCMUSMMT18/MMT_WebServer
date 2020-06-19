@@ -1,11 +1,41 @@
 body{
-   
+    margin: 0;
+    padding: 0;
     background: #4C6663;
     color: #363732;
     font-family: 'Courier New', Courier, monospace;
     text-align: center;
     position: relative;
+    min-height: 100vh;
   }
+
+.container{
+    width: 100%;
+    position: absolute;
+    top: 40%;
+    transform: translateY(-40%);
+    text-align: center;
+}
+
+.container h1{
+    font-size: 100px;
+    margin: 0;
+    font-weight: 900;
+    letter-spacing: 20px;
+    
+}
+
+.container h2{
+    color:  #EF6351;
+    font-size: 30px;
+    margin: 0;
+    font-weight: 900;
+    letter-spacing: 15px;
+}
+
+
+
+
 #index{
     display: grid;
     grid-template-columns: repeat(12,1fr);
@@ -61,4 +91,24 @@ label {
     font-size: 25px;
     font-weight: 900;
     font-family: 'Trebuchet MS'
+}
+.member{
+    grid-column: 6/12;
+    grid-row: 3;
+    border: 1px solid #80808000;
+    height: 200px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: center;
+    border-radius: 7px;
+    box-shadow: 0px 0px 14px 0px grey;
+    background-color: #C9D7F8;   
+}
+.avatar{
+    height: 200px;
+    width: 200px;
+    border: 1px solid #80808000;
+    padding: 7px;
+    align-self: flex-start;
 }
