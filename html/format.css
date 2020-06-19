@@ -94,39 +94,16 @@ label {
     font-family: 'Trebuchet MS'
 }
 .member{
-    grid-column: 6/12;
-    grid-row: 3;
     border: 1px solid #80808000;
     height: 200px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
     position: center;
     border-radius: 7px;
     box-shadow: 0px 0px 14px 0px grey;
     background-color: #C9D7F8;   
 }
-.avatar{
-    height: 200px;
-    width: 200px;
-    border: 1px solid #80808000;
-    padding: 7px;
-    align-self: flex-start;
-    background-color: #C9D7F8;
-    align-content: flex-start;
-    font-weight: 600;
-    padding: 23px;
-    width: 575px;
-    height: 200px;
-    border-radius: 5px;
-    border: none;
-    bottom: 10px;
-    text-align: left;
-}
-
 .member .info{
     font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
-    margin-top: -190px;
+    margin-top: -200px;
     margin-left: 200px;
     line-height: 1.5;
     font-weight: lighter;
@@ -134,12 +111,13 @@ label {
     
 }
 .member img{
-    margin-top: -10px;
     margin-left: 20px;
+    margin-top: -15px;
 }
 .member a{
     font-family: 'Courier New', Courier, monospace;
     margin-left: 20px;
+    margin-top: 100px;	
     color: #C47335;
     font-weight: 700;
     font-size: 26px;
