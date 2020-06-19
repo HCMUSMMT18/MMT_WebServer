@@ -1,43 +1,64 @@
 body{
    
-    background: #5bc289;
-    color: black;
-    font-family: courier new;
+    background: #4C6663;
+    color: #363732;
+    font-family: 'Courier New', Courier, monospace;
     text-align: center;
     position: relative;
   }
-
+#index{
+    display: grid;
+    grid-template-columns: repeat(12,1fr);
+    grid-template-rows: minmax(100px,auto);
+}
 form{
+    grid-column: 6/12;
+    grid-row: 3;
     border: 1px solid #80808000;
-    height: 470px;
+    height: 400px;
     width: 292px;
     display: flex;
     flex-direction: column;
     align-items: center;
     position: center;
-    border-radius: 15px;
+    border-radius: 7px;
     box-shadow: 0px 0px 14px 0px grey;
-    background-color: white;
+    background-color: #C9D7F8;
 }
 input{
     display: block;
-    border-bottom: 2px solid #00BCD4;
+    font-family: 'Courier New', Courier, monospace;
+    border-bottom: 2px solid #D4C5E2;
     margin-top: 6px;
     margin-bottom: 10px;
     outline-style: none;
-    padding: 5px;
-    width: 90%;
+    border-radius: 7px;
+    padding: 7px;
+    width: 80%;
 }
 #submit {
+    color: #C9D7F8;
+    font-weight: 900;
     padding: 7px;
     width: 100px;
     border-radius: 10px;
     border: none;
     bottom: 10px;
-    background: linear-gradient(to right, #fc00ff, #00dbde);
+    background: #363732;
     
 }
-input#ssubmit:hover{
+input#submit:hover{
  
     background: linear-gradient(to right, #fc466b, #3f5efb); 
+}
+label {
+    margin-left: -145px;
+    display: block;
+    font-weight: 600;
+}
+#name{
+    color: #363732;
+    font-size: 25px;
+    font-weight: 900;
+    font-family: 'Trebuchet MS'
 }
