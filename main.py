@@ -2,6 +2,7 @@
 import socket
 import mimetypes
 import os
+import base64
 
 username = "admin"
 password = "admin"
@@ -25,8 +26,8 @@ class TCPServer:
             print("Connected by", addr)
             data = conn.recv(1024)
             response = self.handle_request(data)
-            if (response != None):
-                conn.sendall(response.encode('utf-8'))
+            print("Response:\n", response)
+            self.handle_response(conn, response)
             conn.close()
 
     def handle_request(self, data):
@@ -34,6 +35,13 @@ class TCPServer:
         Override this in subclass.
         """
         return data
+
+    def handle_response(self, conn, response):
+        """
+        Interface
+        Override this
+        """
+        return True
 
 
 class HTTPServer(TCPServer):
@@ -49,6 +57,7 @@ class HTTPServer(TCPServer):
         302: 'Found',
         301: 'Moved Permanently'
     }
+
     def handle_request(self, data):
         # create an instance of `HTTPRequest`
         if (data != b''):
@@ -117,16 +126,20 @@ class HTTPServer(TCPServer):
                         response_body = f.read()
                     blank_line = "\r\n"
                     return "%s%s%s%s" % (response_line,
-                                        response_headers,
-                                        blank_line,
-                                        response_body
-                                        )
+                                         response_headers,
+                                         blank_line,
+                                         response_body
+                                         )
                 else:
                     with open(filename, 'rb') as f:
                         response_body = f.read()
+                        #base64_encoded_data = base64.b64encode(binary_data)
+                        # response_body = "data:" + \
+                        #    str(content_type)+";base64," + \
+                        #    base64_encoded_data.decode("ascii")
                 print('Response body:', response_body)
-                rep = response_line + response_headers + "\r\n" + str(response_body)
-                return rep
+                rep = response_line + response_headers + "\r\n" + response_body
+                return rep  # .encode('utf-8')+response_body
             else:
                 if os.path.exists(os.getcwd() + "\\html\\404.html"):
                     with open(os.getcwd() + "\\html\\404.html", 'r') as f:
@@ -138,12 +151,12 @@ class HTTPServer(TCPServer):
 
                 blank_line = "\r\n"
 
-                return "%s%s%s%s" % (
+                return ["%s%s%s%s" % (
                     response_line,
                     response_headers,
                     blank_line,
                     response_body
-                )
+                ), False]
         else:
             return self.redirect(request, 301, '/index.html')
 
@@ -173,7 +186,6 @@ class HTTPServer(TCPServer):
 
 
 class HTTPRequest:
-
     def __init__(self, data):
         self.method = None
         self.uri = None
@@ -218,6 +230,11 @@ class HTTPRequest:
         if len(words) > 2:
             self.http_version = words[2]
 
+
+class HTTPResponse:
+    def __init__(self):
+        pass
+    
 
 if __name__ == '__main__':
     server = HTTPServer()
