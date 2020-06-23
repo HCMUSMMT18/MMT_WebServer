@@ -1,15 +1,22 @@
-# main.py
 import socket
 import mimetypes
 import os
-import base64
+import logging
 
+logging.basicConfig(filename="server.log", filemode='w', level=logging.DEBUG, format='%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
+#redirect logging to both file and console output
+logging.getLogger().addHandler(logging.StreamHandler())
+
+# TODO: READ USERNAME AND PASSWORD FROM EXTERNAL SOURCE
 username = "admin"
 password = "admin"
 
+# TODO: EXTERNAL CONFIG (SERVERNAME, ROOT PATH ....)
+# TODO: UI
+
 
 class TCPServer:
-    def __init__(self, host='127.0.0.1', port=6789):
+    def __init__(self, host='127.0.0.1', port=80):
         self.host = host
         self.port = port
 
@@ -19,14 +26,13 @@ class TCPServer:
         s.bind((self.host, self.port))
         s.listen(5)
 
-        print("Listening at", s.getsockname())
+        logging.info("Listening at %s", s.getsockname())
 
         while True:
             conn, addr = s.accept()
-            print("Connected by", addr)
+            logging.debug("Connected by %s", addr)
             data = conn.recv(1024)
             response = self.handle_request(data)
-            print("Response:\n", response)
             self.handle_response(conn, response)
             conn.close()
 
@@ -37,9 +43,8 @@ class TCPServer:
         return data
 
     def handle_response(self, conn, response):
-        """
-        Interface
-        Override this
+        """Sends data to client.
+        Override this in subclass.
         """
         return True
 
@@ -59,16 +64,29 @@ class HTTPServer(TCPServer):
     }
 
     def handle_request(self, data):
+        logging.debug("Handling HTTP Request")
         # create an instance of `HTTPRequest`
         if (data != b''):
             request = HTTPRequest(data)
             # now, look at the request method and call the
             # appropriate handler
             handler = getattr(self, 'handle_%s' % request.method)
-
+            logging.debug("Found handler for request: %s", handler)
             response = handler(request)
-
             return response
+
+    def handle_response(self, conn, response):
+        logging.debug("Sending HTTP response")
+        if (response != None):
+            if (type(response) is not list):
+                conn.sendall(response.encode('utf-8'))
+            else:
+                for each in response:
+                    if (type(each) is bytes):
+                        conn.sendall(each)
+                    else:
+                        conn.sendall(each.encode('utf-8'))
+        logging.debug("Done sending HTTP response")
 
     def response_line(self, status_code):
         """Returns response line"""
@@ -92,79 +110,88 @@ class HTTPServer(TCPServer):
         return headers
 
     def handle_OPTIONS(self, request):
+        logging.debug("Request type: OPTIONS")
         response_line = self.response_line(200)
 
         extra_headers = {'Allow': 'OPTIONS, GET, POST'}
         response_headers = self.response_headers(extra_headers)
-
-        blank_line = "\r\n"
+        logging.debug("Headers: %s", extra_headers)
 
         return "%s%s%s" % (
             response_line,
             response_headers,
-            blank_line
+            "\r\n"
         )
 
     def handle_GET(self, request):
+
+        logging.debug("Request type: GET")
+        #constructing path to file
         filename = os.getcwd() + "\\html\\"
+
+        logging.debug("Requested resource: %s", request.uri)
+
+        #if a file is specified
         if (request.uri.strip('/') != ''):
+            #constructs filename
             filename = filename + request.uri.strip('/')
+
+            #if file is found
             if os.path.exists(filename):
+                logging.debug("Found resource at: %s", filename)
                 response_line = self.response_line(200)
 
                 # find out a file's MIME type
                 # if nothing is found, just send `text/html`
                 content_type = mimetypes.guess_type(filename)[0] or 'text/html'
-
+                logging.debug("Content type: %s", content_type)
                 extra_headers = {'Content-Type': content_type}
-                print(extra_headers)
 
                 response_headers = self.response_headers(extra_headers)
-                print("Response headers:\n", response_headers)
+
+                #if content is plain text
                 if ('text' in content_type):
-                    with open(filename, 'r') as f:
+                    with open(filename, 'r', encoding='utf-8') as f:
                         response_body = f.read()
-                    blank_line = "\r\n"
                     return "%s%s%s%s" % (response_line,
                                          response_headers,
-                                         blank_line,
+                                         "\r\n",
                                          response_body
                                          )
+                #if content needs to be sent raw
                 else:
                     with open(filename, 'rb') as f:
                         response_body = f.read()
-                        #base64_encoded_data = base64.b64encode(binary_data)
-                        # response_body = "data:" + \
-                        #    str(content_type)+";base64," + \
-                        #    base64_encoded_data.decode("ascii")
-                print('Response body:', response_body)
-                rep = response_line + response_headers + "\r\n" + response_body
-                return rep  # .encode('utf-8')+response_body
+                rep = [response_line + response_headers + "\r\n", response_body]
+                return rep
             else:
+                logging.warning("Resource not found")
                 if os.path.exists(os.getcwd() + "\\html\\404.html"):
-                    with open(os.getcwd() + "\\html\\404.html", 'r') as f:
+                    with open(os.getcwd() + "\\html\\404.html", 'r', encoding='utf-8') as f:
                         response_body = f.read()
                 else:
+                    logging.warning("404 not found")
                     response_body = '<h1>404 Not Found</h1>'
                 response_line = self.response_line(404)
                 response_headers = self.response_headers()
 
-                blank_line = "\r\n"
-
-                return ["%s%s%s%s" % (
+                return "%s%s%s%s" % (
                     response_line,
                     response_headers,
-                    blank_line,
+                    "\r\n",
                     response_body
-                ), False]
+                )
         else:
+            logging.debug("Redirecting to homepage")
             return self.redirect(request, 301, '/index.html')
 
     def handle_POST(self, request):
-        print("Raw data:", request)
+        logging.debug("Username: %s | Password: %s", request.username, request.password)
         if (request.username == username and request.password == password):
+            logging.debug("Login accepted")
             return self.redirect(request, 303, '/info.html')
         else:
+            logging.debug("Login denied")
             return self.redirect(request, 303, '/404.html')
 
     def redirect(self, request, status_code, url):
@@ -173,54 +200,56 @@ class HTTPServer(TCPServer):
         extra_headers = {'Location': url}
         response_line = self.response_line(status_code)
         response_headers = self.response_headers(extra_headers)
-        response_body = ""
-
-        blank_line = "\r\n"
-
-        return "%s%s%s%s" % (
+        logging.debug("Redirecting to %s with status code %s", url, status_code)
+        return "%s%s%s" % (
             response_line,
             response_headers,
-            blank_line,
-            response_body
+            "\r\n"
         )
 
 
 class HTTPRequest:
+
     def __init__(self, data):
         self.method = None
         self.uri = None
         self.http_version = '1.1'  # default to HTTP/1.1 if request doesn't provide a version
         self.headers = {}  # a dictionary for headers
-        self.POST_types = {'Login': 'parse_Login'}
+        self.POST_types = {'LOGIN': 'parse_LOGIN'}
 
         # call self.parse method to parse the request data
         self.parse(data)
 
     def parse_POST(self, lines):
+        logging.debug("Parsing POST request")
         info = lines[-1].split('&')
         POST_type = info[-1].split('=')[1]
+        logging.debug("POST type: %s", POST_type)
         if (POST_type in self.POST_types):
-            handler = getattr(self, self.POST_types[POST_type])
-            run = handler(info)
+            logging.debug("Found matching parser for POST type: %s", POST_type)
+            parser = getattr(self, self.POST_types[POST_type])
+            parser(info)
         else:
+            logging.debug("Did not find matching parser for POST type: %s", POST_type)
             pass
+        logging.debug("Done parsing POST request")
 
-    def parse_Login(self, info):
+    def parse_LOGIN(self, info):
         self.username = info[0].split('=')[1]
         self.password = info[1].split('=')[1]
 
     def parse(self, data):
-        print("DATA: ", data)
+        logging.debug("Parsing HTTP request")
         if (data != b''):
             lines = data.decode().split('\r\n')
 
             request_line = lines[0]
-            print("REQUEST: ", request_line)
 
             if (request_line.split(' ')[0] == 'POST'):
                 self.parse_POST(lines)
 
             self.parse_request_line(request_line)
+        logging.debug("Done parsing HTTP request")
 
     def parse_request_line(self, request_line):
         words = request_line.split(' ')
@@ -230,11 +259,6 @@ class HTTPRequest:
         if len(words) > 2:
             self.http_version = words[2]
 
-
-class HTTPResponse:
-    def __init__(self):
-        pass
-    
 
 if __name__ == '__main__':
     server = HTTPServer()
