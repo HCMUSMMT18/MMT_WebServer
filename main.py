@@ -2,6 +2,7 @@ import socket
 import mimetypes
 import os
 import logging
+import user_data
 
 logging.basicConfig(filename="server.log", filemode='w', level=logging.DEBUG, format='%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
 #redirect logging to both file and console output
@@ -187,7 +188,8 @@ class HTTPServer(TCPServer):
 
     def handle_POST(self, request):
         logging.debug("Username: %s | Password: %s", request.username, request.password)
-        if (request.username == username and request.password == password):
+        #if (request.username == username and request.password == password):
+        if (user_data.login_check(self, username, password) == True):
             logging.debug("Login accepted")
             return self.redirect(request, 303, '/info.html')
         else:
