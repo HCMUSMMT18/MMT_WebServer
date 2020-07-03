@@ -189,7 +189,7 @@ class HTTPServer(TCPServer):
     def handle_POST(self, request):
         logging.debug("Username: %s | Password: %s", request.username, request.password)
         #if (request.username == username and request.password == password):
-        if (user_data.login_check(self, username, password) == True):
+        if (user_data.login_check(request.username, request.password) == True):
             logging.debug("Login accepted")
             return self.redirect(request, 303, '/info.html')
         else:
