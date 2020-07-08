@@ -8,10 +8,6 @@ logging.basicConfig(filename="server.log", filemode='w', level=logging.DEBUG, fo
 #redirect logging to both file and console output
 logging.getLogger().addHandler(logging.StreamHandler())
 
-# TODO: READ USERNAME AND PASSWORD FROM EXTERNAL SOURCE
-username = "admin"
-password = "admin"
-
 # TODO: EXTERNAL CONFIG (SERVERNAME, ROOT PATH ....)
 # TODO: UI
 
