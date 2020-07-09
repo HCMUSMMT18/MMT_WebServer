@@ -1,16 +1,13 @@
+import tkinter
+import threading
+import random
+import queue
 import socket
 import mimetypes
 import os
 import logging
 import user_data
-import asyncio
-
-logging.basicConfig(filename="server.log", filemode='w', level=logging.DEBUG, format='%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
-#redirect logging to both file and console output
-logging.getLogger().addHandler(logging.StreamHandler())
-
-# TODO: EXTERNAL CONFIG (SERVERNAME, ROOT PATH ....)
-# TODO: UI
+import tkinter.scrolledtext as ScrolledText
 
 
 class TCPServer:
@@ -124,17 +121,17 @@ class HTTPServer(TCPServer):
     def handle_GET(self, request):
 
         logging.debug("Request type: GET")
-        #constructing path to file
+        # constructing path to file
         filename = os.getcwd() + "\\html\\"
 
         logging.debug("Requested resource: %s", request.uri)
 
-        #if a file is specified
+        # if a file is specified
         if (request.uri.strip('/') != ''):
-            #constructs filename
+            # constructs filename
             filename = filename + request.uri.strip('/')
 
-            #if file is found
+            # if file is found
             if os.path.exists(filename):
                 logging.debug("Found resource at: %s", filename)
                 response_line = self.response_line(200)
@@ -147,7 +144,7 @@ class HTTPServer(TCPServer):
 
                 response_headers = self.response_headers(extra_headers)
 
-                #if content is plain text
+                # if content is plain text
                 if ('text' in content_type):
                     with open(filename, 'r', encoding='utf-8') as f:
                         response_body = f.read()
@@ -156,7 +153,7 @@ class HTTPServer(TCPServer):
                                          "\r\n",
                                          response_body
                                          )
-                #if content needs to be sent raw
+                # if content needs to be sent raw
                 else:
                     with open(filename, 'rb') as f:
                         response_body = f.read()
@@ -184,8 +181,9 @@ class HTTPServer(TCPServer):
             return self.redirect(request, 301, '/index.html')
 
     def handle_POST(self, request):
-        logging.debug("Username: %s | Password: %s", request.username, request.password)
-        #if (request.username == username and request.password == password):
+        logging.debug("Username: %s | Password: %s",
+                      request.username, request.password)
+        # if (request.username == username and request.password == password):
         if (user_data.login_check(request.username, request.password) == True):
             logging.debug("Login accepted")
             return self.redirect(request, 303, '/info.html')
@@ -199,7 +197,8 @@ class HTTPServer(TCPServer):
         extra_headers = {'Location': url}
         response_line = self.response_line(status_code)
         response_headers = self.response_headers(extra_headers)
-        logging.debug("Redirecting to %s with status code %s", url, status_code)
+        logging.debug("Redirecting to %s with status code %s",
+                      url, status_code)
         return "%s%s%s" % (
             response_line,
             response_headers,
@@ -229,7 +228,8 @@ class HTTPRequest:
             parser = getattr(self, self.POST_types[POST_type])
             parser(info)
         else:
-            logging.debug("Did not find matching parser for POST type: %s", POST_type)
+            logging.debug(
+                "Did not find matching parser for POST type: %s", POST_type)
             pass
         logging.debug("Done parsing POST request")
 
@@ -259,6 +259,100 @@ class HTTPRequest:
             self.http_version = words[2]
 
 
-if __name__ == '__main__':
-    server = HTTPServer()
-    server.start()
+class TextHandler(logging.Handler):
+    # This class allows you to log to a Tkinter Text or ScrolledText widget
+    # Adapted from Moshe Kaplan: https://gist.github.com/moshekaplan/c425f861de7bbf28ef06
+
+    def __init__(self, text):
+        # run the regular Handler __init__
+        logging.Handler.__init__(self)
+        # Store a reference to the Text it will log to
+        self.text = text
+
+    def emit(self, record):
+        msg = self.format(record)
+
+        def append():
+            self.text.configure(state='normal')
+            self.text.insert(tkinter.END, msg + '\n')
+            self.text.configure(state='disabled')
+            # Autoscroll to the bottom
+            self.text.yview(tkinter.END)
+        # This is necessary because we can't modify the Text from other threads
+        self.text.after(0, append)
+
+
+class GuiPart(tkinter.Frame):
+
+    def __init__(self, parent):
+        # Set up the GUI
+        tkinter.Frame.__init__(self, parent)
+        self.root = parent
+        self.root.title("[MMT_18_5]209_214_215")
+        self.root.option_add('*tearOff', 'FALSE')
+        self.grid(column=0, row=0, sticky='ew')
+        self.grid_columnconfigure(0, weight=1, uniform='a')
+        self.grid_columnconfigure(1, weight=1, uniform='a')
+        self.grid_columnconfigure(2, weight=1, uniform='a')
+        self.grid_columnconfigure(3, weight=1, uniform='a')
+
+        # Add text widget to display logging info
+        st = ScrolledText.ScrolledText(self, state='disabled')
+        st.configure(font='TkFixedFont')
+        st.grid(column=0, row=1, sticky='w', columnspan=4)
+
+        # Create textLogger
+        text_handler = TextHandler(st)
+
+        # Logging configuration
+        logging.basicConfig(filename="server.log", filemode='w', level=logging.DEBUG,
+                            format='%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
+        # redirect logging to both file and console output
+        logging.getLogger().addHandler(logging.StreamHandler())
+        logging.getLogger().addHandler(text_handler)
+
+
+class ThreadedClient:
+    """
+    Launch the main part of the GUI and the worker thread. periodicCall and
+    endApplication could reside in the GUI part, but putting them here
+    means that you have all the thread controls in a single place.
+    """
+
+    def __init__(self, master):
+        """
+        Start the GUI and the asynchronous threads. We are in the main
+        (original) thread of the application, which will later be used by
+        the GUI as well. We spawn a new thread for the worker (I/O).
+        """
+        self.master = master
+
+        # Create the queue
+        #self.queue = queue.Queue(  )
+
+        # Set up the GUI part
+        self.gui = GuiPart(master)
+
+        # Set up the thread to do asynchronous I/O
+        # More threads can also be created and used, if necessary
+        self.running = 1
+        self.thread1 = threading.Thread(target=self.workerThread1)
+        self.thread1.start()
+
+    def workerThread1(self):
+        """
+        This is where we handle the asynchronous I/O. For example, it may be
+        a 'select(  )'. One important thing to remember is that the thread has
+        to yield control pretty regularly, by select or otherwise.
+        """
+        while self.running:
+            # To simulate asynchronous I/O, we create a random number at
+            # random intervals. Replace the following two lines with the real
+            # thing.
+            server = HTTPServer()
+            server.start()
+
+
+root = tkinter.Tk()
+client = ThreadedClient(root)
+root.mainloop()
