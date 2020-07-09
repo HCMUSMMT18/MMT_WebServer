@@ -3,6 +3,7 @@ import mimetypes
 import os
 import logging
 import user_data
+import configuration
 
 logging.basicConfig(filename="server.log", filemode='w', level=logging.DEBUG, format='%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p')
 #redirect logging to both file and console output
@@ -129,7 +130,7 @@ class HTTPServer(TCPServer):
         logging.debug("Request type: GET")
         #constructing path to file
         filename = os.getcwd() + "\\html\\"
-
+        
         logging.debug("Requested resource: %s", request.uri)
 
         #if a file is specified
