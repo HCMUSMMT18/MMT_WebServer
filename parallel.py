@@ -1,14 +1,23 @@
-import tkinter
-import threading
-import random
-import queue
+#Core HTTP implementation
 import socket
 import mimetypes
 import os
+
+#Multithreading support for UI
+import threading
+
+#Logging and acquiring login info from crude database
 import logging
 import user_data
-import tkinter.scrolledtext as ScrolledText
 
+#Basic GUI
+import tkinter
+import tkinter.scrolledtext as ScrolledText
+import tkinter.messagebox as messagebox
+
+#Fix windows 10 blurry DPI scaling issues
+import ctypes
+import sys
 
 class TCPServer:
     def __init__(self, host='127.0.0.1', port=80):
@@ -327,17 +336,20 @@ class ThreadedClient:
         """
         self.master = master
 
-        # Create the queue
-        #self.queue = queue.Queue(  )
+        root.protocol("WM_DELETE_WINDOW", self.on_closing)
 
         # Set up the GUI part
         self.gui = GuiPart(master)
 
         # Set up the thread to do asynchronous I/O
         # More threads can also be created and used, if necessary
-        self.running = 1
         self.thread1 = threading.Thread(target=self.workerThread1)
+        self.thread1.daemon = True
         self.thread1.start()
+
+    def on_closing(self):
+        if messagebox.askokcancel("Quit", "Do you want to quit?"):
+            self.master.destroy()
 
     def workerThread1(self):
         """
@@ -345,14 +357,13 @@ class ThreadedClient:
         a 'select(  )'. One important thing to remember is that the thread has
         to yield control pretty regularly, by select or otherwise.
         """
-        while self.running:
-            # To simulate asynchronous I/O, we create a random number at
-            # random intervals. Replace the following two lines with the real
-            # thing.
-            server = HTTPServer()
-            server.start()
+        server = HTTPServer()
+        server.start()
 
 
-root = tkinter.Tk()
-client = ThreadedClient(root)
-root.mainloop()
+if __name__ == "__main__":   
+    if 'win' in sys.platform:
+        ctypes.windll.shcore.SetProcessDpiAwareness(1)
+    root = tkinter.Tk()
+    client = ThreadedClient(root)
+    root.mainloop()
